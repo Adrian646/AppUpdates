@@ -69,7 +69,6 @@ func GetCurrentAppData(appID string) model.AppFeed {
 		}
 	}
 
-	fmt.Printf("%+v\n", appFeed)
 	return appFeed
 }
 

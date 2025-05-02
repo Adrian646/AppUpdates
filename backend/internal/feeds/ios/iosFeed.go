@@ -62,7 +62,5 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 		feed.AppBannerURL = app.ScreenshotUrls[0]
 	}
 
-	fmt.Printf("%+v\n", feed)
-
 	return feed, nil
 }
