@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Adrian646/AppUpdates/backend/internal/model"
+	"io"
 	"net/http"
 	"time"
 )
@@ -29,7 +30,12 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 	if err != nil {
 		return feed, fmt.Errorf("HTTP request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("error closing response body:", err)
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return feed, fmt.Errorf("non-200 status: %d", resp.StatusCode)

@@ -1,14 +1,28 @@
 package main
 
 import (
-	"github.com/Adrian646/AppUpdates/backend/internal/feeds/android"
-	"github.com/Adrian646/AppUpdates/backend/internal/feeds/ios"
+	"fmt"
+	"github.com/Adrian646/AppUpdates/backend/internal/handler"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	android.GetCurrentAppData("io.bedrockhub.connector.bedrockhub_connector")
-	_, err := ios.GetCurrentAppData("6443529739")
+	err := godotenv.Load("../backend.env")
+
 	if err != nil {
+		panic("Error loading .env file: " + err.Error())
+	}
+
+	r := gin.Default()
+
+	r.GET("/api/v1/feeds/android/:appID", handler.AndroidFeedHandler)
+	r.GET("/api/v1/feeds/ios/:appID", handler.IOSFeedHandler)
+
+	err = r.Run()
+
+	if err != nil {
+		fmt.Printf("Failed to start server: %v\n", err)
 		return
 	}
 }

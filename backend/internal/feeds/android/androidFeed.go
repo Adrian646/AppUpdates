@@ -67,7 +67,6 @@ func GetCurrentAppData(appID string) model.AppFeed {
 				appFeed.DownloadCount = value
 			}
 		}
-
 	}
 
 	fmt.Printf("%+v\n", appFeed)
