@@ -7,7 +7,7 @@ import (
 
 func main() {
 	android.GetCurrentAppData("io.bedrockhub.connector.bedrockhub_connector")
-	_, err := ios.GetIOSAppData("6443529739")
+	_, err := ios.GetCurrentAppData("6443529739")
 	if err != nil {
 		return
 	}
