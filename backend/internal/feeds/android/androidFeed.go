@@ -3,24 +3,26 @@ package android
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
-
+	"github.com/Adrian646/AppUpdates/backend/internal/model"
 	"github.com/chromedp/chromedp"
+	"log"
+	"strings"
+	"time"
 )
 
-func GetCurrentAppData() {
+func GetCurrentAppData(appID string) model.AppFeed {
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	url := buildURL("com.square_enix.android_googleplay.WOTVffbeww")
+	url := fmt.Sprintf("https://play.google.com/store/apps/details?id=%s&hl=en&gl=US", appID)
 
 	var labels []string
 	var values []string
 	var iconURL string
 	var screenshotURL string
+	var releaseNotes string
 
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
@@ -33,18 +35,43 @@ func GetCurrentAppData() {
 		chromedp.Evaluate(`Array.from(document.querySelectorAll("div.G1zzid .reAt0")).map(e => e.textContent)`, &values),
 		chromedp.AttributeValue(`img.T75of`, "src", &iconURL, nil, chromedp.ByQuery),
 		chromedp.AttributeValue(`img.T75of.B5GQxf`, "src", &screenshotURL, nil, chromedp.ByQuery),
+		chromedp.Text(`div[itemprop="description"]`, &releaseNotes, chromedp.ByQuery),
 	)
 
 	if err != nil {
 		log.Fatalf("chromedp failed: %v", err)
 	}
 
-	for i := 0; i < len(labels) && i < len(values); i++ {
-		fmt.Printf("%s: %s\n", labels[i], values[i])
+	appFeed := model.AppFeed{
+		Type:         "android",
+		AppIconURL:   iconURL,
+		AppBannerURL: screenshotURL,
+		ReleaseNotes: releaseNotes,
 	}
 
-	fmt.Printf("Icon URL: %s\n", iconURL)
-	fmt.Printf("Screenshot URL: %s\n", screenshotURL)
+	for i := 0; i < len(labels) && i < len(values); i++ {
+		label := strings.TrimSpace(labels[i])
+		value := strings.TrimSpace(values[i])
+
+		switch label {
+		case "Version":
+			appFeed.Version = value
+		case "Updated on":
+			appFeed.UpdatedOn = value
+		case "Offered by":
+			appFeed.Developer = value
+		case "Downloads":
+			if idx := strings.Index(value, "+"); idx != -1 {
+				appFeed.DownloadCount = strings.TrimSpace(value[:idx])
+			} else {
+				appFeed.DownloadCount = value
+			}
+		}
+
+	}
+
+	fmt.Printf("%+v\n", appFeed)
+	return appFeed
 }
 
 func clickSeeMoreIfPresent(ctx context.Context) error {
@@ -68,8 +95,4 @@ func clickSeeMoreIfPresent(ctx context.Context) error {
 
 	log.Println("No button found to read the app information's.")
 	return nil
-}
-
-func buildURL(appId string) string {
-	return "https://play.google.com/store/apps/details?id=" + appId + "&hl=en&gl=US"
 }
