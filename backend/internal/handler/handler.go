@@ -25,9 +25,13 @@ func GetFeed(c *gin.Context) {
 		First(&feed).Error
 
 	miss := errors.Is(err, gorm.ErrRecordNotFound)
-	stale := !miss && time.Since(feed.LastChecked) > feedTTL
+	stale := !miss && err == nil && time.Since(feed.LastChecked) > feedTTL
+
+	var isNew bool
 
 	if miss || stale {
+		prevVersion := feed.Version
+
 		var fresh model.AppFeed
 		if platform == "ios" {
 			fresh, err = ios.GetCurrentAppData(appID)
@@ -50,6 +54,13 @@ func GetFeed(c *gin.Context) {
 		feed.ReleaseNotes = fresh.ReleaseNotes
 		feed.LastChecked = time.Now()
 
+		if miss || fresh.Version != prevVersion {
+			feed.Notified = false
+			isNew = true
+		} else {
+			isNew = false
+		}
+
 		if miss {
 			if err := DB.Create(&feed).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -64,9 +75,11 @@ func GetFeed(c *gin.Context) {
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	} else {
+		isNew = !feed.Notified
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	response := gin.H{
 		"platform":       feed.Platform,
 		"app_id":         feed.AppID,
 		"version":        feed.Version,
@@ -76,7 +89,16 @@ func GetFeed(c *gin.Context) {
 		"app_icon_url":   feed.AppIconURL,
 		"app_banner_url": feed.AppBannerURL,
 		"release_notes":  feed.ReleaseNotes,
-	})
+		"new_version":    isNew,
+	}
+
+	if isNew {
+		DB.Model(&model.AppFeed{}).
+			Where("platform = ? AND app_id = ?", feed.Platform, feed.AppID).
+			Update("notified", true)
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func ListSubscriptions(c *gin.Context) {
@@ -177,4 +199,41 @@ func DeleteSubscription(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription deleted"})
+}
+
+func GetGuildUpdates(c *gin.Context) {
+	guildID := c.Param("guildID")
+	var subs []model.Subscription
+	if err := DB.
+		Preload("AppFeed", "notified = ?", false).
+		Where("guild_id = ?", guildID).
+		Find(&subs).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	updates := make([]gin.H, len(subs))
+	for i, s := range subs {
+		f := s.AppFeed
+		updates[i] = gin.H{
+			"subscription_id": s.ID,
+			"platform":        f.Platform,
+			"app_id":          f.AppID,
+			"version":         f.Version,
+			"developer":       f.Developer,
+			"updated_on":      f.UpdatedOn,
+			"download_count":  f.DownloadCount,
+			"app_icon_url":    f.AppIconURL,
+			"app_banner_url":  f.AppBannerURL,
+			"release_notes":   f.ReleaseNotes,
+		}
+	}
+
+	for _, s := range subs {
+		DB.Model(&model.AppFeed{}).
+			Where("id = ?", s.AppFeedID).
+			Update("notified", true)
+	}
+
+	c.JSON(http.StatusOK, updates)
 }

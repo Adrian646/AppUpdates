@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	"github.com/Adrian646/AppUpdates/backend/internal/feeds/updater"
 	"github.com/Adrian646/AppUpdates/backend/internal/handler"
 	"github.com/Adrian646/AppUpdates/backend/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"log"
 	"os"
 )
 
@@ -25,10 +27,13 @@ func main() {
 		return
 	}
 
+	updater.StartFeedUpdater(db)
+
 	r := gin.Default()
 
 	r.Use(checkToken)
 
+	r.GET("/guilds/:guildID/updates", handler.GetGuildUpdates)
 	r.GET("/api/v1/feeds/:platform/:appID", handler.GetFeed)
 	r.GET("/api/v1/guilds/:guildID/feeds", handler.ListSubscriptions)
 	r.POST("/api/v1/guilds/:guildID/feeds", handler.CreateSubscription)
@@ -37,7 +42,7 @@ func main() {
 	err = r.Run()
 
 	if err != nil {
-		fmt.Printf("Failed to start server: %v\n", err)
+		log.Printf("Failed to start server: %v\n", err)
 		return
 	}
 }

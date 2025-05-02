@@ -49,8 +49,6 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 		ReleaseNotes: releaseNotes,
 	}
 
-	print("a")
-
 	for i := 0; i < len(labels) && i < len(values); i++ {
 		label := strings.TrimSpace(labels[i])
 		value := strings.TrimSpace(values[i])

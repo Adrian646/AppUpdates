@@ -18,6 +18,7 @@ type AppFeed struct {
 	AppBannerURL  string    `gorm:"type:text"`
 	ReleaseNotes  string    `gorm:"type:text"`
 	LastChecked   time.Time `gorm:"autoUpdateTime"`
+	Notified      bool      `gorm:"not null;default:false;index"`
 }
 
 type Subscription struct {
