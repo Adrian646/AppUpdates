@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func GetCurrentAppData(appID string) model.AppFeed {
+func GetCurrentAppData(appID string) (model.AppFeed, error) {
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 	ctx, cancel = context.WithTimeout(ctx, 30*time.Second)
@@ -18,36 +18,38 @@ func GetCurrentAppData(appID string) model.AppFeed {
 
 	url := fmt.Sprintf("https://play.google.com/store/apps/details?id=%s&hl=en&gl=US", appID)
 
-	var labels []string
-	var values []string
-	var iconURL string
-	var screenshotURL string
-	var releaseNotes string
+	var (
+		labels        []string
+		values        []string
+		iconURL       string
+		screenshotURL string
+		releaseNotes  string
+	)
 
 	err := chromedp.Run(ctx,
 		chromedp.Navigate(url),
 		chromedp.WaitVisible(`img.T75of`, chromedp.ByQuery),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			return clickSeeMoreIfPresent(ctx)
-		}),
+		chromedp.ActionFunc(clickSeeMoreIfPresent),
 		chromedp.Sleep(500*time.Millisecond),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll("div.G1zzid .q078ud")).map(e => e.textContent)`, &labels),
 		chromedp.Evaluate(`Array.from(document.querySelectorAll("div.G1zzid .reAt0")).map(e => e.textContent)`, &values),
-		chromedp.AttributeValue(`img.T75of`, "src", &iconURL, nil, chromedp.ByQuery),
-		chromedp.AttributeValue(`img.T75of.B5GQxf`, "src", &screenshotURL, nil, chromedp.ByQuery),
+		chromedp.AttributeValue(`img.T75of`, "src", &iconURL, nil),
+		chromedp.AttributeValue(`img.T75of.B5GQxf`, "src", &screenshotURL, nil),
 		chromedp.Text(`div[itemprop="description"]`, &releaseNotes, chromedp.ByQuery),
 	)
-
 	if err != nil {
-		log.Fatalf("chromedp failed: %v", err)
+		return model.AppFeed{}, fmt.Errorf("chromedp failed: %w", err)
 	}
 
-	appFeed := model.AppFeed{
-		Type:         "android",
+	feed := model.AppFeed{
+		Platform:     "android",
+		AppID:        appID,
 		AppIconURL:   iconURL,
 		AppBannerURL: screenshotURL,
 		ReleaseNotes: releaseNotes,
 	}
+
+	print("a")
 
 	for i := 0; i < len(labels) && i < len(values); i++ {
 		label := strings.TrimSpace(labels[i])
@@ -55,21 +57,27 @@ func GetCurrentAppData(appID string) model.AppFeed {
 
 		switch label {
 		case "Version":
-			appFeed.Version = value
+			feed.Version = value
+
 		case "Updated on":
-			appFeed.UpdatedOn = value
+			fmt.Println(value)
+			if t, err := time.Parse("Jan 2, 2006", value); err == nil {
+				feed.UpdatedOn = t
+			}
+
 		case "Offered by":
-			appFeed.Developer = value
+			feed.Developer = value
+
 		case "Downloads":
 			if idx := strings.Index(value, "+"); idx != -1 {
-				appFeed.DownloadCount = strings.TrimSpace(value[:idx])
+				feed.DownloadCount = strings.TrimSpace(value[:idx])
 			} else {
-				appFeed.DownloadCount = value
+				feed.DownloadCount = value
 			}
 		}
 	}
 
-	return appFeed
+	return feed, nil
 }
 
 func clickSeeMoreIfPresent(ctx context.Context) error {
@@ -77,20 +85,19 @@ func clickSeeMoreIfPresent(ctx context.Context) error {
 		`button[aria-label="See more information on About this app"]`,
 		`button[aria-label="See more information on About this game"]`,
 	}
-
 	for _, sel := range selectors {
 		var visible bool
-		err := chromedp.Run(ctx,
+		if err := chromedp.Run(ctx,
 			chromedp.EvaluateAsDevTools(fmt.Sprintf(`!!document.querySelector('%s')`, sel), &visible),
-		)
-		if err == nil && visible {
-			return chromedp.Run(ctx,
+		); err == nil && visible {
+			if err := chromedp.Run(ctx,
 				chromedp.ScrollIntoView(sel, chromedp.ByQuery),
 				chromedp.Click(sel, chromedp.ByQuery),
-			)
+			); err != nil {
+				log.Println("clickSeeMore error:", err)
+			}
+			break
 		}
 	}
-
-	log.Println("No button found to read the app information's.")
 	return nil
 }
