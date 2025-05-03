@@ -13,7 +13,7 @@ import (
 
 var DB *gorm.DB
 
-const feedTTL = 5 * time.Minute
+const feedTTL = 2 * time.Minute
 
 func GetFeed(c *gin.Context) {
 	platform := c.Param("platform")

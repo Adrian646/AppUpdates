@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/Adrian646/AppUpdates/bot/internal/handler"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -64,6 +65,7 @@ func main() {
 				gateway.IntentGuilds,
 			),
 		),
+		bot.WithEventListenerFunc(handler.HandleSlashCommand),
 	)
 
 	if err != nil {

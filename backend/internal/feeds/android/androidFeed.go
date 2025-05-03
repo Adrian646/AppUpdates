@@ -58,7 +58,6 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 			feed.Version = value
 
 		case "Updated on":
-			fmt.Println(value)
 			if t, err := time.Parse("Jan 2, 2006", value); err == nil {
 				feed.UpdatedOn = t
 			}
