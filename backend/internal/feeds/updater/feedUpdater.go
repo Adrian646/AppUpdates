@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const feedTTL = 15 * time.Minute
+const feedTTL = 5 * time.Minute
 
 func StartFeedUpdater(db *gorm.DB) {
 	ticker := time.NewTicker(feedTTL)

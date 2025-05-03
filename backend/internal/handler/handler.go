@@ -13,7 +13,7 @@ import (
 
 var DB *gorm.DB
 
-const feedTTL = 15 * time.Minute
+const feedTTL = 5 * time.Minute
 
 func GetFeed(c *gin.Context) {
 	platform := c.Param("platform")
@@ -212,10 +212,13 @@ func GetGuildUpdates(c *gin.Context) {
 		return
 	}
 
-	updates := make([]gin.H, len(subs))
-	for i, s := range subs {
+	var updates []gin.H
+	for _, s := range subs {
+		if s.AppFeed.ID == 0 {
+			continue
+		}
 		f := s.AppFeed
-		updates[i] = gin.H{
+		updates = append(updates, gin.H{
 			"subscription_id": s.ID,
 			"platform":        f.Platform,
 			"app_id":          f.AppID,
@@ -226,10 +229,18 @@ func GetGuildUpdates(c *gin.Context) {
 			"app_icon_url":    f.AppIconURL,
 			"app_banner_url":  f.AppBannerURL,
 			"release_notes":   f.ReleaseNotes,
-		}
+		})
+	}
+
+	if len(updates) == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "No updates available"})
+		return
 	}
 
 	for _, s := range subs {
+		if s.AppFeed.ID == 0 {
+			continue
+		}
 		DB.Model(&model.AppFeed{}).
 			Where("id = ?", s.AppFeedID).
 			Update("notified", true)

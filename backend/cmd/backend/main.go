@@ -16,7 +16,7 @@ import (
 var db *gorm.DB
 
 func main() {
-	err := godotenv.Load("../backend.env")
+	err := godotenv.Load("../.env")
 
 	if err != nil {
 		panic("Error loading .env file: " + err.Error())
@@ -29,11 +29,13 @@ func main() {
 
 	updater.StartFeedUpdater(db)
 
+	gin.SetMode(os.Getenv("GIN_MODE"))
+
 	r := gin.Default()
 
 	r.Use(checkToken)
 
-	r.GET("/guilds/:guildID/updates", handler.GetGuildUpdates)
+	r.GET("/api/v1/guilds/:guildID/updates", handler.GetGuildUpdates)
 	r.GET("/api/v1/feeds/:platform/:appID", handler.GetFeed)
 	r.GET("/api/v1/guilds/:guildID/feeds", handler.ListSubscriptions)
 	r.POST("/api/v1/guilds/:guildID/feeds", handler.CreateSubscription)
