@@ -15,6 +15,8 @@ import (
 
 var db *gorm.DB
 
+var baseURL string
+
 func main() {
 	err := godotenv.Load("../.env")
 
@@ -31,15 +33,19 @@ func main() {
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
+	baseURL = os.Getenv("API_BASE_URL")
+
+	fmt.Println(baseURL)
+
 	r := gin.Default()
 
 	r.Use(checkToken)
 
-	r.GET("/api/v1/guilds/:guildID/updates", handler.GetGuildUpdates)
-	r.GET("/api/v1/feeds/:platform/:appID", handler.GetFeed)
-	r.GET("/api/v1/guilds/:guildID/feeds", handler.ListSubscriptions)
-	r.POST("/api/v1/guilds/:guildID/feeds", handler.CreateSubscription)
-	r.DELETE("/api/v1/guilds/:guildID/feeds/:platform/:appID", handler.DeleteSubscription)
+	r.GET(baseURL+"guilds/:guildID/updates", handler.GetGuildUpdates)
+	r.GET(baseURL+"feeds/:platform/:appID", handler.GetFeed)
+	r.GET(baseURL+"guilds/:guildID/feeds", handler.ListSubscriptions)
+	r.POST(baseURL+"guilds/:guildID/feeds", handler.CreateSubscription)
+	r.DELETE(baseURL+"guilds/:guildID/feeds/:platform/:appID", handler.DeleteSubscription)
 
 	err = r.Run()
 

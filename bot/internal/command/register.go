@@ -6,8 +6,8 @@ import (
 	"github.com/disgoorg/disgo/events"
 )
 
-func HandleRegisterCommand(event *events.ApplicationCommandInteractionCreate) {
-	platform := event.SlashCommandInteractionData().String("platform")
+func HandleRegisterCommand(e *events.ApplicationCommandInteractionCreate) {
+	platform := e.SlashCommandInteractionData().String("platform")
 
 	modal := discord.NewModalCreateBuilder().
 		SetCustomID("register_app").
@@ -15,7 +15,7 @@ func HandleRegisterCommand(event *events.ApplicationCommandInteractionCreate) {
 		AddActionRow(discord.NewTextInput("app_id", discord.TextInputStyleShort, "Please enter your app id")).
 		Build()
 
-	err := event.Modal(modal)
+	err := e.Modal(modal)
 	if err != nil {
 		return
 	}

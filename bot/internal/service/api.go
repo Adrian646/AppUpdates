@@ -1,4 +1,4 @@
-package apiclient
+package api
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -46,22 +47,33 @@ type GuildUpdate struct {
 type APIService struct {
 	BaseURL string
 	Client  *http.Client
+	APIKey  string
 }
+
+var host = "http://localhost:8080"
 
 func New(baseURL string) *APIService {
 	return &APIService{
 		BaseURL: baseURL,
 		Client:  &http.Client{Timeout: 10 * time.Second},
+		APIKey:  os.Getenv("API_KEY"),
 	}
 }
 
 func (s *APIService) GetFeed(platform, appID string) (*AppFeed, error) {
-	url := fmt.Sprintf("%s/api/v1/feeds/%s/%s", s.BaseURL, platform, appID)
-	resp, err := s.Client.Get(url)
+	url := fmt.Sprintf(host+"%sfeeds/%s/%s", s.BaseURL, platform, appID)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", s.APIKey)
+
+	resp, err := s.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
@@ -73,12 +85,19 @@ func (s *APIService) GetFeed(platform, appID string) (*AppFeed, error) {
 }
 
 func (s *APIService) ListSubscriptions(guildID string) ([]Subscription, error) {
-	url := fmt.Sprintf("%s/api/v1/guilds/%s/feeds", s.BaseURL, guildID)
-	resp, err := s.Client.Get(url)
+	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", s.APIKey)
+
+	resp, err := s.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
@@ -99,12 +118,20 @@ func (s *APIService) CreateSubscription(guildID, channelID, platform, appID stri
 	if err != nil {
 		return 0, err
 	}
-	url := fmt.Sprintf("%s/api/v1/guilds/%s/feeds", s.BaseURL, guildID)
-	resp, err := s.Client.Post(url, "application/json", bytes.NewReader(b))
+	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
+	if err != nil {
+		return 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", s.APIKey)
+
+	resp, err := s.Client.Do(req)
 	if err != nil {
 		return 0, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return 0, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
@@ -119,16 +146,19 @@ func (s *APIService) CreateSubscription(guildID, channelID, platform, appID stri
 }
 
 func (s *APIService) DeleteSubscription(guildID, platform, appID string) error {
-	url := fmt.Sprintf("%s/api/v1/guilds/%s/feeds/%s/%s", s.BaseURL, guildID, platform, appID)
+	url := fmt.Sprintf(host+"%sguilds/%s/feeds/%s/%s", s.BaseURL, guildID, platform, appID)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err
 	}
+	req.Header.Set("Authorization", s.APIKey)
+
 	resp, err := s.Client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status: %s", resp.Status)
 	}
@@ -136,12 +166,19 @@ func (s *APIService) DeleteSubscription(guildID, platform, appID string) error {
 }
 
 func (s *APIService) GetGuildUpdates(guildID string) ([]GuildUpdate, error) {
-	url := fmt.Sprintf("%s/api/v1/guilds/%s/updates", s.BaseURL, guildID)
-	resp, err := s.Client.Get(url)
+	url := fmt.Sprintf(host+"%sguilds/%s/updates", s.BaseURL, guildID)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Authorization", s.APIKey)
+
+	resp, err := s.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}

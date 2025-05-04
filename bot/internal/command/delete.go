@@ -5,6 +5,6 @@ import (
 	"github.com/disgoorg/disgo/events"
 )
 
-func HandleDeleteCommand(event *events.ApplicationCommandInteractionCreate) {
+func HandleDeleteCommand(e *events.ApplicationCommandInteractionCreate) {
 	fmt.Println("Delete Command Called")
 }
