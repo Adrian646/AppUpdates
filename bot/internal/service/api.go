@@ -44,7 +44,7 @@ type GuildUpdate struct {
 	ReleaseNotes   string    `json:"release_notes"`
 }
 
-type APIService struct {
+type Service struct {
 	BaseURL string
 	Client  *http.Client
 	APIKey  string
@@ -52,15 +52,15 @@ type APIService struct {
 
 var host = "http://localhost:8080"
 
-func New(baseURL string) *APIService {
-	return &APIService{
+func New(baseURL string) *Service {
+	return &Service{
 		BaseURL: baseURL,
-		Client:  &http.Client{Timeout: 10 * time.Second},
+		Client:  &http.Client{Timeout: 1 * time.Minute},
 		APIKey:  os.Getenv("API_KEY"),
 	}
 }
 
-func (s *APIService) GetFeed(platform, appID string) (*AppFeed, error) {
+func (s *Service) GetFeed(platform, appID string) (*AppFeed, error) {
 	url := fmt.Sprintf(host+"%sfeeds/%s/%s", s.BaseURL, platform, appID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *APIService) GetFeed(platform, appID string) (*AppFeed, error) {
 	return &feed, nil
 }
 
-func (s *APIService) ListSubscriptions(guildID string) ([]Subscription, error) {
+func (s *Service) ListSubscriptions(guildID string) ([]Subscription, error) {
 	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -108,7 +108,7 @@ func (s *APIService) ListSubscriptions(guildID string) ([]Subscription, error) {
 	return subs, nil
 }
 
-func (s *APIService) CreateSubscription(guildID, channelID, platform, appID string) (uint, error) {
+func (s *Service) CreateSubscription(guildID, channelID, platform, appID string) (uint, error) {
 	reqBody := map[string]string{
 		"channel_id": channelID,
 		"platform":   platform,
@@ -145,7 +145,7 @@ func (s *APIService) CreateSubscription(guildID, channelID, platform, appID stri
 	return result.SubscriptionID, nil
 }
 
-func (s *APIService) DeleteSubscription(guildID, platform, appID string) error {
+func (s *Service) DeleteSubscription(guildID, platform, appID string) error {
 	url := fmt.Sprintf(host+"%sguilds/%s/feeds/%s/%s", s.BaseURL, guildID, platform, appID)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
@@ -165,7 +165,7 @@ func (s *APIService) DeleteSubscription(guildID, platform, appID string) error {
 	return nil
 }
 
-func (s *APIService) GetGuildUpdates(guildID string) ([]GuildUpdate, error) {
+func (s *Service) GetGuildUpdates(guildID string) ([]GuildUpdate, error) {
 	url := fmt.Sprintf(host+"%sguilds/%s/updates", s.BaseURL, guildID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

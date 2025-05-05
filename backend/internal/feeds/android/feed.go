@@ -35,7 +35,7 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 		chromedp.Evaluate(`Array.from(document.querySelectorAll("div.G1zzid .reAt0")).map(e => e.textContent)`, &values),
 		chromedp.AttributeValue(`img.T75of`, "src", &iconURL, nil),
 		chromedp.AttributeValue(`img.T75of.B5GQxf`, "src", &screenshotURL, nil),
-		chromedp.Text(`div[itemprop="description"]`, &releaseNotes, chromedp.ByQuery),
+		chromedp.Text(`div[itemprop="description"]`, &releaseNotes, chromedp.ByQuery), //ToDo: Make release notes optional, THEY CAN BE NOT THERE BRUH
 	)
 	if err != nil {
 		return model.AppFeed{}, fmt.Errorf("chromedp failed: %w", err)

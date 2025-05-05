@@ -1,4 +1,4 @@
-package main
+package discordbot
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"syscall"
 )
 
-var ApiClient *apiclient.APIService
+var ApiClient *apiclient.Service
 
 var commands = []discord.ApplicationCommandCreate{
 	discord.SlashCommandCreate{
@@ -53,7 +53,7 @@ var commands = []discord.ApplicationCommandCreate{
 	},
 }
 
-func main() {
+func StartBot() {
 	fmt.Println("Starting bot...")
 
 	err := godotenv.Load("../.env")

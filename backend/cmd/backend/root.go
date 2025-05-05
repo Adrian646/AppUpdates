@@ -1,4 +1,4 @@
-package main
+package backend
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ var db *gorm.DB
 
 var baseURL string
 
-func main() {
+func StartBackend() {
 	err := godotenv.Load("../.env")
 
 	if err != nil {
