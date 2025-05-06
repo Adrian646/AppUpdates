@@ -6,7 +6,6 @@ import (
 	"github.com/Adrian646/AppUpdates/backend/internal/handler"
 	"github.com/Adrian646/AppUpdates/backend/internal/model"
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -15,16 +14,8 @@ import (
 
 var db *gorm.DB
 
-var baseURL string
-
 func StartBackend() {
-	err := godotenv.Load("../.env")
-
-	if err != nil {
-		panic("Error loading .env file: " + err.Error())
-	}
-
-	err = InitDatabase(os.Getenv("DB_DSN"))
+	err := InitDatabase(os.Getenv("DB_DSN"))
 	if err != nil {
 		return
 	}
@@ -33,18 +24,18 @@ func StartBackend() {
 
 	gin.SetMode(os.Getenv("GIN_MODE"))
 
-	baseURL = os.Getenv("API_BASE_URL")
+	apiRoutePrefix := os.Getenv("API_ROUTE_PREFIX")
 
 	r := gin.Default()
 
 	r.Use(checkToken)
 
-	r.GET(baseURL+"feeds/updates", handler.GetFeedUpdates)
-	r.GET(baseURL+"feeds/:platform/:appID", handler.GetFeed)
-	r.GET(baseURL+"subscriptions/:subscriptionID", handler.GetSubscriptionByID)
-	r.GET(baseURL+"guilds/:guildID/feeds", handler.ListSubscriptions)
-	r.POST(baseURL+"guilds/:guildID/feeds", handler.CreateSubscription)
-	r.DELETE(baseURL+"guilds/:guildID/feeds/:platform/:appID", handler.DeleteSubscription)
+	r.GET(apiRoutePrefix+"feeds/updates", handler.GetFeedUpdates)
+	r.GET(apiRoutePrefix+"feeds/:platform/:appID", handler.GetFeed)
+	r.GET(apiRoutePrefix+"subscriptions/:subscriptionID", handler.GetSubscriptionByID)
+	r.GET(apiRoutePrefix+"guilds/:guildID/feeds", handler.ListSubscriptions)
+	r.POST(apiRoutePrefix+"guilds/:guildID/feeds", handler.CreateSubscription)
+	r.DELETE(apiRoutePrefix+"guilds/:guildID/feeds/:platform/:appID", handler.DeleteSubscription)
 
 	err = r.Run()
 
@@ -56,7 +47,7 @@ func StartBackend() {
 
 func checkToken(c *gin.Context) {
 	token := c.Request.Header.Get("Authorization")
-	if token != os.Getenv("API_KEY") {
+	if token != os.Getenv("API_SECRET") {
 		c.JSON(401, gin.H{"error": "Unauthorized"})
 		c.Abort()
 		return

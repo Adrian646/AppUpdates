@@ -23,7 +23,7 @@ func StartFeedUpdater(client bot.Client) {
 }
 
 func updateFeeds(client bot.Client) {
-	service := api.New(os.Getenv("API_BASE_URL"))
+	service := api.New(os.Getenv("API_ROUTE_PREFIX"))
 
 	updates, err := service.GetFeedUpdates()
 	if err != nil {

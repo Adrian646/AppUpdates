@@ -10,7 +10,6 @@ import (
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/gateway"
 	"github.com/disgoorg/json"
-	"github.com/joho/godotenv"
 	"os"
 	"os/signal"
 	"syscall"
@@ -54,13 +53,7 @@ var commands = []discord.ApplicationCommandCreate{
 func StartBot() {
 	fmt.Println("Starting bot...")
 
-	err := godotenv.Load("../.env")
-
-	if err != nil {
-		panic("Error loading .env file: " + err.Error())
-	}
-
-	client, err := disgo.New(os.Getenv("BOT_TOKEN"),
+	client, err := disgo.New(os.Getenv("DISCORD_BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(
 			gateway.WithIntents(
 				gateway.IntentGuilds,

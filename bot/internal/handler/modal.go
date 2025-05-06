@@ -29,7 +29,7 @@ func HandleModal(e *events.ModalSubmitInteractionCreate) {
 
 func handleRegisterApp(e *events.ModalSubmitInteractionCreate, platform string) {
 	appID := e.Data.Text("app_id")
-	client := apiclient.New(os.Getenv("API_BASE_URL"))
+	client := apiclient.New(os.Getenv("API_ROUTE_PREFIX"))
 
 	feed, feedError := client.GetFeed(platform, appID)
 

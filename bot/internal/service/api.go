@@ -51,7 +51,7 @@ type Service struct {
 }
 
 func New(basePath string) *Service {
-	host := os.Getenv("API_HOST")
+	host := os.Getenv("API_BASE_URL")
 	if !strings.HasSuffix(host, "/") {
 		host += "/"
 	}
@@ -62,7 +62,7 @@ func New(basePath string) *Service {
 	return &Service{
 		BaseURL: host + basePath,
 		Client:  &http.Client{Timeout: 1 * time.Minute},
-		APIKey:  os.Getenv("API_KEY"),
+		APIKey:  os.Getenv("API_SECRET"),
 	}
 }
 
