@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -25,11 +25,10 @@ type AppFeed struct {
 }
 
 type Subscription struct {
-	SubscriptionID uint    `json:"subscription_id"`
+	SubscriptionID uint    `json:"id"`
+	GuildID        string  `json:"guild_id"`
 	ChannelID      string  `json:"channel_id"`
-	Platform       string  `json:"platform"`
-	AppID          string  `json:"app_id"`
-	Feed           AppFeed `json:"feed"`
+	AppFeed        AppFeed `json:"app_feed"`
 }
 
 type GuildUpdate struct {
@@ -51,18 +50,24 @@ type Service struct {
 	APIKey  string
 }
 
-var host = "http://localhost:8080"
+func New(basePath string) *Service {
+	host := os.Getenv("API_HOST")
+	if !strings.HasSuffix(host, "/") {
+		host += "/"
+	}
+	if strings.HasPrefix(basePath, "/") {
+		basePath = strings.TrimPrefix(basePath, "/")
+	}
 
-func New(baseURL string) *Service {
 	return &Service{
-		BaseURL: baseURL,
+		BaseURL: host + basePath,
 		Client:  &http.Client{Timeout: 1 * time.Minute},
 		APIKey:  os.Getenv("API_KEY"),
 	}
 }
 
 func (s *Service) GetFeed(platform, appID string) (*AppFeed, error) {
-	url := fmt.Sprintf(host+"%sfeeds/%s/%s", s.BaseURL, platform, appID)
+	url := fmt.Sprintf("%sfeeds/%s/%s", s.BaseURL, platform, appID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -86,7 +91,7 @@ func (s *Service) GetFeed(platform, appID string) (*AppFeed, error) {
 }
 
 func (s *Service) GetSubscriptionByID(subscriptionID string) (Subscription, error) {
-	url := fmt.Sprintf(host+"%ssubscriptions/%s", s.BaseURL, subscriptionID)
+	url := fmt.Sprintf("%ssubscriptions/%s", s.BaseURL, subscriptionID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return Subscription{}, err
@@ -110,7 +115,7 @@ func (s *Service) GetSubscriptionByID(subscriptionID string) (Subscription, erro
 }
 
 func (s *Service) ListSubscriptions(guildID string) ([]Subscription, error) {
-	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
+	url := fmt.Sprintf("%sguilds/%s/feeds", s.BaseURL, guildID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -143,7 +148,7 @@ func (s *Service) CreateSubscription(guildID, channelID, platform, appID string)
 	if err != nil {
 		return 0, err
 	}
-	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
+	url := fmt.Sprintf("%sguilds/%s/feeds", s.BaseURL, guildID)
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(b))
 	if err != nil {
 		return 0, err
@@ -171,7 +176,7 @@ func (s *Service) CreateSubscription(guildID, channelID, platform, appID string)
 }
 
 func (s *Service) DeleteSubscription(guildID, platform, appID string) error {
-	url := fmt.Sprintf(host+"%sguilds/%s/feeds/%s/%s", s.BaseURL, guildID, platform, appID)
+	url := fmt.Sprintf("%sguilds/%s/feeds/%s/%s", s.BaseURL, guildID, platform, appID)
 	req, err := http.NewRequest(http.MethodDelete, url, nil)
 	if err != nil {
 		return err
@@ -190,8 +195,8 @@ func (s *Service) DeleteSubscription(guildID, platform, appID string) error {
 	return nil
 }
 
-func (s *Service) GetGuildUpdates(guildID string) ([]GuildUpdate, error) {
-	url := fmt.Sprintf(host+"%sguilds/%s/updates", s.BaseURL, guildID)
+func (s *Service) GetFeedUpdates() ([]Subscription, error) {
+	url := fmt.Sprintf("%sfeeds/updates", s.BaseURL)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -207,19 +212,10 @@ func (s *Service) GetGuildUpdates(guildID string) ([]GuildUpdate, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+
+	var subs []Subscription
+	if err := json.NewDecoder(resp.Body).Decode(&subs); err != nil {
 		return nil, err
 	}
-	var msg struct {
-		Message string `json:"message"`
-	}
-	if err := json.Unmarshal(body, &msg); err == nil && msg.Message != "" {
-		return []GuildUpdate{}, nil
-	}
-	var updates []GuildUpdate
-	if err := json.Unmarshal(body, &updates); err != nil {
-		return nil, err
-	}
-	return updates, nil
+	return subs, nil
 }

@@ -1,15 +1,17 @@
 package feedUpdater
 
 import (
-	"context"
 	"fmt"
+	embedBuilder "github.com/Adrian646/AppUpdates/bot/internal/builder"
+	api "github.com/Adrian646/AppUpdates/bot/internal/service"
 	"github.com/disgoorg/disgo/bot"
-	"github.com/disgoorg/disgo/rest"
-	"log"
+	"github.com/disgoorg/disgo/discord"
+	"github.com/disgoorg/snowflake/v2"
+	"os"
 	"time"
 )
 
-const feedTTL = 2 * time.Minute
+const feedTTL = 3 * time.Minute
 
 func StartFeedUpdater(client bot.Client) {
 	ticker := time.NewTicker(feedTTL)
@@ -21,13 +23,33 @@ func StartFeedUpdater(client bot.Client) {
 }
 
 func updateFeeds(client bot.Client) {
-	guilds, err := client.Rest().GetCurrentUserGuilds(context.TODO(), rest.GetCurrentUserGuildsOpts{})
+	service := api.New(os.Getenv("API_BASE_URL"))
+
+	updates, err := service.GetFeedUpdates()
 	if err != nil {
-		log.Fatalf("Fehler beim Abrufen der Guilds: %v", err)
+		return
 	}
 
-	// Ausgabe der Guild-IDs und -Namen
-	for _, guild := range guilds {
-		fmt.Printf("Guild ID: %s, Name: %s\n", guild.ID, guild.Name)
+	for _, sub := range updates {
+		feed := &sub.AppFeed
+		channelID := snowflake.MustParse(sub.ChannelID)
+		fmt.Printf("Updating feed %s for channel %s\n", feed.AppID, channelID.String())
+		if feed.Platform == "android" {
+			_, messageError := client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().
+				AddEmbeds(embedBuilder.BuildAndroidEmbed(feed)).
+				Build(),
+			)
+			if messageError != nil {
+				fmt.Println("Error sending channel message: ", messageError)
+			}
+		} else {
+			_, messageError := client.Rest().CreateMessage(channelID, discord.NewMessageCreateBuilder().
+				AddEmbeds(embedBuilder.BuildIOSEmbed(feed)).
+				Build(),
+			)
+			if messageError != nil {
+				fmt.Println("Error sending channel message: ", messageError)
+			}
+		}
 	}
 }

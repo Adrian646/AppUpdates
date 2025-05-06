@@ -3,6 +3,7 @@ package discordbot
 import (
 	"context"
 	"fmt"
+	feedUpdater "github.com/Adrian646/AppUpdates/bot/internal/feed"
 	"github.com/Adrian646/AppUpdates/bot/internal/handler"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
@@ -80,6 +81,8 @@ func StartBot() {
 	if err = client.OpenGateway(context.TODO()); err != nil {
 		panic(err)
 	}
+
+	feedUpdater.StartFeedUpdater(client)
 
 	fmt.Println("Bot is now running. Press CTRL+C to exit.")
 
