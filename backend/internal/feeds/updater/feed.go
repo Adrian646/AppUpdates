@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const feedTTL = 2 * time.Minute
+const feedTTL = 5 * time.Minute
 
 func StartFeedUpdater(db *gorm.DB) {
 	ticker := time.NewTicker(feedTTL)
@@ -56,7 +56,7 @@ func checkAllFeeds(db *gorm.DB) {
 			if err := db.Save(&f).Error; err != nil {
 				log.Printf("Couldnt save the newest feed: %v\n", err)
 			} else {
-				log.Printf("Found a new version: %s/%s → %s\n", f.Platform, f.AppID, f.Version)
+				log.Printf("Found a new version: %s/%s → %s\n", f.Platform, f.AppName, f.Version)
 			}
 		} else {
 			db.Model(&f).Update("last_checked", time.Now())

@@ -1,7 +1,6 @@
 package android
 
 import (
-	"fmt"
 	"github.com/Adrian646/AppUpdates/backend/internal/model"
 	"github.com/n0madic/google-play-scraper/pkg/app"
 )
@@ -29,8 +28,6 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 		DownloadCount: a.Installs,
 		UpdatedOn:     a.Updated,
 	}
-
-	fmt.Println(feed)
 
 	return feed, nil
 }

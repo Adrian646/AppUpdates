@@ -85,6 +85,30 @@ func (s *Service) GetFeed(platform, appID string) (*AppFeed, error) {
 	return &feed, nil
 }
 
+func (s *Service) GetSubscriptionByID(subscriptionID string) (Subscription, error) {
+	url := fmt.Sprintf(host+"%ssubscriptions/%s", s.BaseURL, subscriptionID)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return Subscription{}, err
+	}
+	req.Header.Set("Authorization", s.APIKey)
+
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		return Subscription{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return Subscription{}, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+	var sub Subscription
+	if err := json.NewDecoder(resp.Body).Decode(&sub); err != nil {
+		return Subscription{}, err
+	}
+	return sub, nil
+}
+
 func (s *Service) ListSubscriptions(guildID string) ([]Subscription, error) {
 	url := fmt.Sprintf(host+"%sguilds/%s/feeds", s.BaseURL, guildID)
 	req, err := http.NewRequest(http.MethodGet, url, nil)

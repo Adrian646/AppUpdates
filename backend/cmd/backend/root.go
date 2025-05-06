@@ -35,14 +35,13 @@ func StartBackend() {
 
 	baseURL = os.Getenv("API_BASE_URL")
 
-	fmt.Println(baseURL)
-
 	r := gin.Default()
 
 	r.Use(checkToken)
 
-	r.GET(baseURL+"guilds/:guildID/updates", handler.GetGuildUpdates)
+	r.GET(baseURL+"feeds/updates", handler.GetFeedUpdates)
 	r.GET(baseURL+"feeds/:platform/:appID", handler.GetFeed)
+	r.GET(baseURL+"subscriptions/:subscriptionID", handler.GetSubscriptionByID)
 	r.GET(baseURL+"guilds/:guildID/feeds", handler.ListSubscriptions)
 	r.POST(baseURL+"guilds/:guildID/feeds", handler.CreateSubscription)
 	r.DELETE(baseURL+"guilds/:guildID/feeds/:platform/:appID", handler.DeleteSubscription)

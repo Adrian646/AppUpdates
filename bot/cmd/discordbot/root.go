@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/Adrian646/AppUpdates/bot/internal/handler"
-	apiclient "github.com/Adrian646/AppUpdates/bot/internal/service"
 	"github.com/disgoorg/disgo"
 	"github.com/disgoorg/disgo/bot"
 	"github.com/disgoorg/disgo/discord"
@@ -15,8 +14,6 @@ import (
 	"os/signal"
 	"syscall"
 )
-
-var ApiClient *apiclient.Service
 
 var commands = []discord.ApplicationCommandCreate{
 	discord.SlashCommandCreate{
@@ -61,8 +58,6 @@ func StartBot() {
 	if err != nil {
 		panic("Error loading .env file: " + err.Error())
 	}
-
-	ApiClient = apiclient.New(os.Getenv("API_BASE_URL"))
 
 	client, err := disgo.New(os.Getenv("BOT_TOKEN"),
 		bot.WithGatewayConfigOpts(

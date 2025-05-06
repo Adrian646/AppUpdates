@@ -13,7 +13,7 @@ import (
 
 var DB *gorm.DB
 
-const feedTTL = 2 * time.Minute
+const feedTTL = 5 * time.Minute
 
 func GetFeed(c *gin.Context) {
 	platform := c.Param("platform")
@@ -101,6 +101,21 @@ func GetFeed(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+func GetSubscriptionByID(c *gin.Context) {
+	subscriptionID := c.Param("subscriptionID")
+
+	var sub model.Subscription
+
+	if err := DB.
+		Preload("AppFeed").
+		First(&sub, subscriptionID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Subscription not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, sub)
 }
 
 func ListSubscriptions(c *gin.Context) {
@@ -204,12 +219,10 @@ func DeleteSubscription(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Subscription deleted"})
 }
 
-func GetGuildUpdates(c *gin.Context) {
-	guildID := c.Param("guildID")
+func GetFeedUpdates(c *gin.Context) {
 	var subs []model.Subscription
 	if err := DB.
 		Preload("AppFeed", "notified = ?", false).
-		Where("guild_id = ?", guildID).
 		Find(&subs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -222,17 +235,21 @@ func GetGuildUpdates(c *gin.Context) {
 		}
 		f := s.AppFeed
 		updates = append(updates, gin.H{
-			"subscription_id": s.ID,
-			"platform":        f.Platform,
-			"app_id":          f.AppID,
-			"app_name":        f.AppName,
-			"version":         f.Version,
-			"developer":       f.Developer,
-			"updated_on":      f.UpdatedOn,
-			"download_count":  f.DownloadCount,
-			"app_icon_url":    f.AppIconURL,
-			"app_banner_url":  f.AppBannerURL,
-			"release_notes":   f.ReleaseNotes,
+			"id":         s.ID,
+			"guild_id":   s.GuildID,
+			"channel_id": s.ChannelID,
+			"app_feed": gin.H{
+				"platform":       f.Platform,
+				"app_id":         f.AppID,
+				"app_name":       f.AppName,
+				"version":        f.Version,
+				"developer":      f.Developer,
+				"updated_on":     f.UpdatedOn,
+				"download_count": f.DownloadCount,
+				"app_icon_url":   f.AppIconURL,
+				"app_banner_url": f.AppBannerURL,
+				"release_notes":  f.ReleaseNotes,
+			},
 		})
 	}
 
