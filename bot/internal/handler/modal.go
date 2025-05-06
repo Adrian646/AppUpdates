@@ -2,16 +2,24 @@ package handler
 
 import (
 	"fmt"
+	embedBuilder "github.com/Adrian646/AppUpdates/bot/internal/builder"
 	apiclient "github.com/Adrian646/AppUpdates/bot/internal/service"
 	"github.com/disgoorg/disgo/discord"
 	"github.com/disgoorg/disgo/events"
 	"os"
+	"strings"
 )
 
 func HandleModal(e *events.ModalSubmitInteractionCreate) {
-	switch e.Data.CustomID {
+	parts := strings.Split(e.Data.CustomID, ":")
+
+	switch parts[0] {
 	case "register_app":
-		handleRegisterApp(e)
+		platform := "android"
+		if len(parts) > 1 {
+			platform = parts[1]
+		}
+		handleRegisterApp(e, platform)
 	case "delete_app":
 		handleDeleteApp(e)
 	default:
@@ -19,65 +27,69 @@ func HandleModal(e *events.ModalSubmitInteractionCreate) {
 	}
 }
 
-func handleRegisterApp(e *events.ModalSubmitInteractionCreate) {
+func handleRegisterApp(e *events.ModalSubmitInteractionCreate, platform string) {
 	appID := e.Data.Text("app_id")
 	client := apiclient.New(os.Getenv("API_BASE_URL"))
-	embed := discord.NewEmbedBuilder()
 
-	feed, err := client.GetFeed("android", appID)
-	if err != nil {
-		fmt.Println("Error getting feed: ", err)
-		embed.SetColor(0xff0000)
-		embed.SetDescription("Error while getting feed.\nPlease check the app ID and try again.\nIf this problem persists, please contact the developers.")
-		err := e.CreateMessage(discord.NewMessageCreateBuilder().AddEmbeds(embed.Build()).Build())
-		if err != nil {
-			return
-		}
-	}
+	feed, feedError := client.GetFeed(platform, appID)
 
-	_, err = client.CreateSubscription(e.GuildID().String(), e.Channel().ID().String(), "android", appID)
+	_, subscriptionError := client.CreateSubscription(e.GuildID().String(), e.Channel().ID().String(), platform, appID)
 
-	if err != nil {
-		fmt.Println("Error creating subscription: ", err)
-		embed.SetColor(0xff0000)
-		embed.SetDescription("Error while creating subscription.\nPlease check the app ID and try again.\nIf this problem persists, please contact the developers.")
-		err := e.CreateMessage(discord.NewMessageCreateBuilder().AddEmbeds(embed.Build()).Build())
+	if subscriptionError != nil {
+		fmt.Println("Error creating subscription: ", subscriptionError)
+		err := e.CreateMessage(discord.NewMessageCreateBuilder().
+			SetEphemeral(true).
+			AddEmbeds(embedBuilder.BuildErrorEmbed(
+				"Error while creating subscription.\nPlease check the app ID and try again.\nIf this problem persists, please contact the developers.",
+				nil,
+				false,
+			)).Build())
 		if err != nil {
 			return
 		}
 		return
 	}
 
-	embed.SetColor(0x00ff00)
-
-	embed.SetAuthor("Android Update", "", "https://upload.wikimedia.org/wikipedia/commons/d/d7/Android_robot.svg")
-
-	embed.SetTitlef("%s v%s is available!", feed.AppID, feed.Version)
-	embed.SetURLf("https://play.google.com/store/apps/details?id=%s", feed.AppID)
-	embed.SetThumbnail(feed.AppIconURL)
-
-	embed.AddField("**Dynamic Details**",
-		fmt.Sprintf(
-			"**App ID:** `%s`\n**Developer:** %s\n**Updated on:** %s\n**Downloads:** %s+",
-			feed.AppID,
-			feed.Developer,
-			feed.UpdatedOn.Format("2006-01-02"),
-			feed.DownloadCount,
-		),
-		false)
-
-	embed.AddField("**Release Notes**", feed.ReleaseNotes, false)
-
-	if feed.AppBannerURL != "" {
-		embed.SetImage(feed.AppBannerURL)
-	}
-
-	err = e.CreateMessage(discord.NewMessageCreateBuilder().
-		AddEmbeds(embed.Build()).
+	messageError := e.CreateMessage(discord.NewMessageCreateBuilder().
+		SetEphemeral(true).
+		AddEmbeds(embedBuilder.BuildLoadingEmbed()).
 		Build(),
 	)
-	if err != nil {
+	if messageError != nil {
 		return
+	}
+
+	if feedError != nil {
+		fmt.Println("Error getting feed: ", feedError)
+		err := e.CreateMessage(discord.NewMessageCreateBuilder().
+			SetEphemeral(true).
+			AddEmbeds(
+				embedBuilder.BuildErrorEmbed(
+					"Error while getting feed.\\nPlease check the app ID and try again.\\nIf this problem persists, please contact the developers.",
+					nil,
+					false,
+				)).Build())
+		if err != nil {
+			return
+		}
+	}
+
+	if platform == "android" {
+		_, messageError = e.Client().Rest().CreateMessage(e.Channel().ID(), discord.NewMessageCreateBuilder().
+			AddEmbeds(embedBuilder.BuildAndroidEmbed(feed)).
+			Build(),
+		)
+		if messageError != nil {
+			fmt.Println("Error sending channel message: ", messageError)
+		}
+	} else {
+		_, messageError = e.Client().Rest().CreateMessage(e.Channel().ID(), discord.NewMessageCreateBuilder().
+			AddEmbeds(embedBuilder.BuildIOSEmbed(feed)).
+			Build(),
+		)
+		if messageError != nil {
+			fmt.Println("Error sending channel message: ", messageError)
+		}
 	}
 
 }

@@ -11,6 +11,7 @@ import (
 type iOSLookupResponse struct {
 	ResultCount int `json:"resultCount"`
 	Results     []struct {
+		TrackName          string   `json:"trackName"`
 		Version            string   `json:"version"`
 		ArtistName         string   `json:"artistName"`
 		ArtworkUrl512      string   `json:"artworkUrl512"`
@@ -51,6 +52,7 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 
 	feed.Platform = "ios"
 	feed.AppID = appID
+	feed.AppName = app.TrackName
 	feed.Version = app.Version
 	feed.Developer = app.ArtistName
 	feed.AppIconURL = app.ArtworkUrl512

@@ -45,6 +45,7 @@ func GetFeed(c *gin.Context) {
 
 		feed.Platform = platform
 		feed.AppID = appID
+		feed.AppName = fresh.AppName
 		feed.Version = fresh.Version
 		feed.Developer = fresh.Developer
 		feed.UpdatedOn = fresh.UpdatedOn
@@ -82,6 +83,7 @@ func GetFeed(c *gin.Context) {
 	response := gin.H{
 		"platform":       feed.Platform,
 		"app_id":         feed.AppID,
+		"app_name":       feed.AppName,
 		"version":        feed.Version,
 		"developer":      feed.Developer,
 		"updated_on":     feed.UpdatedOn,
@@ -122,6 +124,7 @@ func ListSubscriptions(c *gin.Context) {
 			"app_id":          s.AppFeed.AppID,
 			"feed": gin.H{
 				"version":        s.AppFeed.Version,
+				"name":           s.AppFeed.AppName,
 				"developer":      s.AppFeed.Developer,
 				"updated_on":     s.AppFeed.UpdatedOn,
 				"download_count": s.AppFeed.DownloadCount,
@@ -222,6 +225,7 @@ func GetGuildUpdates(c *gin.Context) {
 			"subscription_id": s.ID,
 			"platform":        f.Platform,
 			"app_id":          f.AppID,
+			"app_name":        f.AppName,
 			"version":         f.Version,
 			"developer":       f.Developer,
 			"updated_on":      f.UpdatedOn,

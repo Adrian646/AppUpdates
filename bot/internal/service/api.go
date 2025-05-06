@@ -13,6 +13,7 @@ import (
 type AppFeed struct {
 	Platform      string    `json:"platform"`
 	AppID         string    `json:"app_id"`
+	AppName       string    `json:"app_name"`
 	Version       string    `json:"version"`
 	Developer     string    `json:"developer"`
 	UpdatedOn     time.Time `json:"updated_on"`

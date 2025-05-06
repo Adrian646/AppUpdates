@@ -10,7 +10,7 @@ func HandleRegisterCommand(e *events.ApplicationCommandInteractionCreate) {
 	platform := e.SlashCommandInteractionData().String("platform")
 
 	modal := discord.NewModalCreateBuilder().
-		SetCustomID("register_app").
+		SetCustomID(fmt.Sprintf("register_app:%s", platform)).
 		SetTitle(fmt.Sprintf("Register an %s app", platform)).
 		AddActionRow(discord.NewTextInput("app_id", discord.TextInputStyleShort, "Please enter your app id")).
 		Build()
