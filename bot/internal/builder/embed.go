@@ -19,10 +19,11 @@ func BuildAndroidEmbed(feed *api.AppFeed) discord.Embed {
 
 	embed.AddField("**Dynamic Details**",
 		fmt.Sprintf(
-			"**App ID:** `%s`\n**Developer:** %s\n**Updated on:** %s\n**Downloads:** %s",
+			"**App ID:** `%s`\n**Version:** %s\n**Developer:** %s\n**Updated on:** <t:%d:f>\n**Downloads:** %s",
 			feed.AppID,
+			feed.Version,
 			feed.Developer,
-			feed.UpdatedOn.Format("2006-01-02"),
+			feed.UpdatedOn.Unix(),
 			feed.DownloadCount,
 		),
 		false)
@@ -51,10 +52,11 @@ func BuildIOSEmbed(feed *api.AppFeed) discord.Embed {
 
 	embed.AddField("**Dynamic Details**",
 		fmt.Sprintf(
-			"**App ID:** `%s`\n**Developer:** %s\n**Updated on:** %s",
+			"**App ID:** `%s`\n**Version:** %s\n**Developer:** %s\n**Updated on:** <t:%d:f>",
 			feed.AppID,
+			feed.Version,
 			feed.Developer,
-			feed.UpdatedOn.Format("2006-01-02"),
+			feed.UpdatedOn.Unix(),
 		),
 		false)
 
