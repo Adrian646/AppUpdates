@@ -1,8 +1,6 @@
 services:
   backend:
-    network_mode: host
     build:
-      network: host
       context: ./backend
     env_file: .env
     environment:
@@ -13,9 +11,7 @@ services:
       - db
 
   bot:
-    network_mode: host
     build:
-      network: host
       context: ./bot
     env_file: .env
     depends_on:
@@ -31,7 +27,6 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     ports:
       - "3306:3306"
-    network_mode: host
     volumes:
       - db_data:/var/lib/mysql
 
