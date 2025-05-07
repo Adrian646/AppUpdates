@@ -14,4 +14,4 @@ COPY --from=builder /app/backend-server .
 COPY wait-for-it.sh /usr/local/bin/wait-for-it
 RUN chmod +x /usr/local/bin/wait-for-it
 
-CMD ["wait-for-it", "db:3306", "-t", "60", "--", "./backend-server"]
+CMD ["wait-for-it", "localhost:3306", "-t", "60", "--", "./backend-server"]

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Adrian646/AppUpdates/backend/internal/model"
+	"log"
 	"net/http"
 	"time"
 )
@@ -25,8 +26,16 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 	var feed model.AppFeed
 
 	url := fmt.Sprintf("https://itunes.apple.com/lookup?id=%s&country=US", appID)
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Get(url)
+	client := &http.Client{Timeout: 20 * time.Second}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return feed, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("User-Agent", "AppUpdatesBot/1.0")
+	req.Header.Set("Cache-Control", "no-cache")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return feed, fmt.Errorf("HTTP request failed: %w", err)
 	}
@@ -61,6 +70,8 @@ func GetCurrentAppData(appID string) (model.AppFeed, error) {
 	}
 	feed.ReleaseNotes = app.ReleaseNotes
 	feed.UpdatedOn = updatedOn
+
+	log.Printf("[iOS] AppID %s → Version %s (%s)", appID, app.Version, feed.UpdatedOn.Format("2006-01-02"))
 
 	return feed, nil
 }

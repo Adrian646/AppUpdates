@@ -15,6 +15,8 @@ import (
 var db *gorm.DB
 
 func StartBackend() {
+	fmt.Println("Starting backend...")
+
 	err := InitDatabase(os.Getenv("DB_DSN"))
 	if err != nil {
 		return

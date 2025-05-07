@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-const feedTTL = 3 * time.Minute
+const feedTTL = 2 * time.Minute
 
 func StartFeedUpdater(client bot.Client) {
 	ticker := time.NewTicker(feedTTL)
