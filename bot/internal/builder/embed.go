@@ -47,7 +47,7 @@ func BuildIOSEmbed(feed *api.AppFeed) discord.Embed {
 	embed.SetAuthor("IOS Update", "", "https://cdn.discordapp.com/emojis/1369094367800852570.webp")
 
 	embed.SetTitlef("%s v%s is available!", feed.AppName, feed.Version)
-	embed.SetURLf("https://play.google.com/store/apps/details?id=%s", feed.AppID)
+	embed.SetURLf("https://apps.apple.com/app/id%s", feed.AppID)
 	embed.SetThumbnail(feed.AppIconURL)
 
 	embed.AddField("**Dynamic Details**",
